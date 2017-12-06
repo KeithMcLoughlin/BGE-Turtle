@@ -44,7 +44,7 @@ bool Turtle::Initialise()
 	physicsFactory->CreateWall(glm::vec3(20, 0, 20), 10, 10, 2, 2, 2);
 	ball = physicsFactory->CreateSphere(2, glm::vec3(-20, 0, 20), glm::quat());
 
-	shared_ptr<PhysicsController> turtle = CreateTurtle(glm::vec3(-10, 5, 10), 5);
+	shared_ptr<PhysicsController> turtle = CreateTurtle(glm::vec3(-10, 4, 10), 5);
 	timeBeforeFlippingShell = FlipInterval;
 	return Game::Initialise();
 }
@@ -79,25 +79,23 @@ void BGE::Turtle::Update(float deltaTime)
 		tail->rigidBody->applyTorque(legTorque);
 	}
 
-	/* Head tracking ball*/
+	/* Head tracking ball */
+	/* had issues where it would rotate in one direction constantly as I could not 
+	   find how to represent when to look right or left, only when it was behind or not */
+	/*
 	glm::vec3 distVec = ball->transform->position - head->transform->position;
 	float dot = glm::dot(glm::normalize(distVec), head->transform->look);
 	PrintFloat("Dot Prduct: ", dot);
 
-	float angle = glm::acos(dot);
-	PrintFloat("Angle: ", angle);
-
-	float degrees = glm::degrees(angle);
-	PrintFloat("Degrees: ", degrees);
-
-	/*if (dot < 0)
+	if (dot > 0)
 	{
 		head->rigidBody->applyForce(btVector3(-1, 0, 0), btVector3(headScale, 0, 0));
 	}
-	else if ()
+	else
 	{
 		head->rigidBody->applyForce(btVector3(1, 0, 0), btVector3(-headScale, 0, 0));
-	}*/
+	}
+	*/
 
 	//add force to move legs
 	rightFrontLeg->rigidBody->applyTorque(legTorque);
@@ -157,6 +155,7 @@ shared_ptr<PhysicsController> Turtle::CreateTurtle(glm::vec3 position, float sca
 	//create shell
 	shell = physicsFactory->CreateCylinder(shellRadius, shellRadius / 2, position + glm::vec3(0, shellRadius / 2, 0), glm::quat());
 
+	//attach shell to body
 	btHingeConstraint * shellHinge = new btHingeConstraint(*shell->rigidBody, *base->rigidBody,
 		GLToBtVector(glm::vec3(0, -(shellRadius / 4), -(shellRadius))),	GLToBtVector(glm::vec3(0, shellRadius / 4, -(shellRadius))), 
 		btVector3(1, 0, 0), btVector3(1, 0, 0));
@@ -194,7 +193,7 @@ shared_ptr<PhysicsController> Turtle::CreateAndAttachLeg(glm::vec3 position, dou
 
 void Turtle::FlipShell()
 {
-	//remove latch so shell can open
+	//remove latch so shell can open and apply an upwards force to the shell
 	dynamicsWorld->removeConstraint(shellLatch);
 	shell->rigidBody->applyForce(btVector3(0, 20000, 0), btVector3(0, -(shellRadius / 4), shellRadius));
 }
